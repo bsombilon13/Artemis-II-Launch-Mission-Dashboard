@@ -1,0 +1,5 @@
+{
+  "name": "Artemis II Mission Command",
+  "description": "A modern, high-tech mission control dashboard for the Artemis II mission, featuring real-time telemetry, sequence monitoring, and multi-feed video surveillance.",
+  "requestFramePermissions": []
+}
