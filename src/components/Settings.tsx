@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Settings as SettingsIcon, X, Save, Calendar, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
+import { useAudio } from '../contexts/AudioContext';
 
 interface SettingsProps {
   isOpen: boolean;
@@ -22,8 +23,10 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [tempDate, setTempDate] = useState(format(launchDate, "yyyy-MM-dd'T'HH:mm"));
   const [tempIds, setTempIds] = useState(youtubeIds.join(', '));
+  const { playSound } = useAudio();
 
   const handleSave = () => {
+    playSound('click');
     onUpdateLaunchDate(new Date(tempDate));
     onUpdateYoutubeIds(tempIds.split(',').map(s => s.trim()).filter(s => s.length > 0));
     onClose();
@@ -56,7 +59,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Configuration Panel</p>
                 </div>
               </div>
-              <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => { playSound('click'); onClose(); }} className="text-white/40 hover:text-white transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>

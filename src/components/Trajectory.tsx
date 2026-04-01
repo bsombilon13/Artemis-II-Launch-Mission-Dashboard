@@ -15,8 +15,8 @@ export const Trajectory: React.FC<TrajectoryProps> = ({ progress }) => {
   // For simplicity, we'll just use a motion path animation
   
   return (
-    <div className="relative w-full h-full bg-black/40 border border-white/10 rounded-lg overflow-hidden p-4">
-      <div className="absolute top-2 left-4 text-[10px] font-mono text-white/40 uppercase tracking-widest">
+    <div className="relative w-full h-full bg-black/40 border border-white/10 rounded-lg overflow-hidden p-2">
+      <div className="absolute top-1.5 left-3 text-[9px] font-mono text-white/40 uppercase tracking-widest">
         Mission Trajectory Visualization
       </div>
       
@@ -75,8 +75,8 @@ export const Trajectory: React.FC<TrajectoryProps> = ({ progress }) => {
         </motion.g>
       </svg>
 
-      <div className="absolute bottom-4 right-4 flex flex-col items-end gap-1">
-        <div className="text-[10px] font-mono text-white/40 uppercase">Current Phase</div>
+      <div className="absolute bottom-2 right-3 flex flex-col items-end gap-0.5">
+        <div className="text-[9px] font-mono text-white/40 uppercase">Current Phase</div>
         <div className="text-xs font-mono text-orange-500 uppercase font-bold tracking-wider">
           {progress < 0.1 ? 'Ascent' : progress < 0.5 ? 'Translunar' : progress < 0.9 ? 'Lunar Flyby' : 'Return'}
         </div>

@@ -1,20 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactPlayer from 'react-player';
-import { Maximize2, Volume2, VolumeX, LayoutGrid, Monitor } from 'lucide-react';
+import { Maximize2, Volume2, VolumeX, LayoutGrid, Monitor, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface VideoWallProps {
   feedIds: string[];
 }
 
-const Player = ReactPlayer as any;
+// Handle potential ESM/CJS default export issues
+const Player = (ReactPlayer as any).default || ReactPlayer;
 
 export const VideoWall: React.FC<VideoWallProps> = ({ feedIds }) => {
   const [primaryIndex, setPrimaryIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isGrid, setIsGrid] = useState(false);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
-  const feeds = feedIds.length > 0 ? feedIds : ['21X5lGlDOfg', '921VbEMAnaM', '3_p_V_p_V_p', 'v64KOxKVzvo'];
+  const feeds = feedIds.length > 0 ? feedIds : ['21X5lGlDOfg', '921VbEMAnaM', 'v64KOxKVzvo', 'CMLD0Lp0JBg'];
+
+  const getYoutubeUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
+
+  const handlePlayerError = (id: string) => {
+    console.error(`Video player error for feed: ${id}`);
+    setErrors(prev => ({ ...prev, [id]: true }));
+  };
 
   return (
     <div className="flex flex-col h-full bg-black/40 border border-white/10 rounded-lg overflow-hidden">
@@ -40,68 +49,62 @@ export const VideoWall: React.FC<VideoWallProps> = ({ feedIds }) => {
       </div>
 
       <div className={`flex-1 relative p-2 ${isGrid ? 'grid grid-cols-2 grid-rows-2 gap-2' : 'flex flex-col gap-2'}`}>
-        {isGrid ? (
-          feeds.map((id, idx) => (
-            <div key={`grid-${id}-${idx}`} className="relative bg-black rounded overflow-hidden border border-white/5">
-              <Player
-                url={`https://www.youtube.com/watch?v=${id}`}
-                width="100%"
-                height="100%"
-                muted={isMuted}
-                playing={true}
-                controls={false}
-                config={{ youtube: { rel: 0 } }}
-              />
-              <div className="absolute top-2 left-2 px-1 bg-black/60 text-[8px] font-mono text-white/60 uppercase rounded">
-                Feed {idx + 1}
+        {feeds.map((id, idx) => {
+          const isPrimary = !isGrid && primaryIndex === idx;
+          const isThumbnail = !isGrid && primaryIndex !== idx;
+          const hasError = errors[id];
+          
+          return (
+            <div 
+              key={`player-${id}-${idx}`}
+              className={`relative bg-black rounded overflow-hidden border transition-all duration-500 ${
+                isGrid ? 'border-white/5' : 
+                isPrimary ? 'flex-[3] border-white/10 shadow-2xl' : 
+                'flex-1 border-white/10 opacity-60 hover:opacity-100'
+              }`}
+              onClick={() => !isGrid && setPrimaryIndex(idx)}
+            >
+              {!hasError ? (
+                <Player
+                  url={getYoutubeUrl(id)}
+                  width="100%"
+                  height="100%"
+                  muted={isPrimary ? isMuted : true}
+                  playing={true}
+                  loop={true}
+                  controls={false}
+                  onError={() => handlePlayerError(id)}
+                  config={{ 
+                    youtube: { 
+                      playerVars: { 
+                        autoplay: 1, 
+                        mute: (isPrimary ? isMuted : true) ? 1 : 0, 
+                        controls: 0, 
+                        rel: 0,
+                        modestbranding: 1,
+                        origin: window.location.origin
+                      } 
+                    } 
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/5 gap-2">
+                  <AlertCircle className="w-6 h-6 text-orange-500/40" />
+                  <span className="text-[8px] font-mono text-white/40 uppercase">Feed Unavailable</span>
+                </div>
+              )}
+              
+              <div className="absolute top-2 left-2 px-1 bg-black/60 text-[8px] font-mono text-white/60 uppercase rounded pointer-events-none">
+                {isPrimary ? 'Primary Mission Feed' : `Feed ${idx + 1}`}
               </div>
+              {isThumbnail && !hasError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                  <span className="text-[8px] font-mono text-white uppercase font-bold">Switch to Primary</span>
+                </div>
+              )}
             </div>
-          ))
-        ) : (
-          <>
-            {/* Primary Feed */}
-            <div className="flex-[3] relative bg-black rounded-lg overflow-hidden border border-white/10 shadow-2xl">
-              <Player
-                key={`primary-${feeds[primaryIndex]}`}
-                url={`https://www.youtube.com/watch?v=${feeds[primaryIndex]}`}
-                width="100%"
-                height="100%"
-                muted={isMuted}
-                playing={true}
-                controls={false}
-                config={{ youtube: { rel: 0 } }}
-              />
-              <div className="absolute top-4 left-4 px-2 py-1 bg-blue-500/80 text-[10px] font-mono text-white uppercase rounded font-bold tracking-widest">
-                Primary Mission Feed
-              </div>
-            </div>
-
-            {/* Thumbnails */}
-            <div className="flex-1 grid grid-cols-4 gap-2">
-              {feeds.map((id, idx) => (
-                <button
-                  key={`thumb-${id}-${idx}`}
-                  onClick={() => setPrimaryIndex(idx)}
-                  className={`relative bg-black rounded overflow-hidden border transition-all ${
-                    primaryIndex === idx ? 'border-blue-500 ring-1 ring-blue-500' : 'border-white/10 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <Player
-                    url={`https://www.youtube.com/watch?v=${id}`}
-                    width="100%"
-                    height="100%"
-                    muted={true}
-                    playing={true}
-                    controls={false}
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                    <span className="text-[8px] font-mono text-white uppercase font-bold">Switch</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+          );
+        })}
       </div>
     </div>
   );

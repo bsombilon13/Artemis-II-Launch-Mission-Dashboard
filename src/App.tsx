@@ -26,43 +26,29 @@ import { Settings } from './components/Settings';
 import { Spacecraft3D } from './components/Spacecraft3D';
 import { DynamicBackground } from './components/DynamicBackground';
 
+import { AudioProvider, useAudio } from './contexts/AudioContext';
+
 export default function App() {
+  return (
+    <AudioProvider>
+      <AppContent />
+    </AudioProvider>
+  );
+}
+
+function AppContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [youtubeIds, setYoutubeIds] = useState(['21X5lGlDOfg', '921VbEMAnaM', '3_p_V_p_V_p', 'v64KOxKVzvo']);
+  const [youtubeIds, setYoutubeIds] = useState(['21X5lGlDOfg', 'v64KOxKVzvo', 'CMLD0Lp0JBg', 'DDU-rZs-Ic4']);
   const [launchDate, setLaunchDate] = useState(new Date('2025-09-01T10:00:00')); // Default future date
   
   const { lTime, tTime, isPaused, togglePause, updateLaunchDate, now } = useMissionClock(launchDate);
-  const beepRef = useRef<HTMLAudioElement | null>(null);
+  const { isMuted, toggleMute, playSound } = useAudio();
 
   useEffect(() => {
-    beepRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    beepRef.current.volume = 0.1;
-    return () => {
-      if (beepRef.current) {
-        beepRef.current.pause();
-        beepRef.current.src = ""; // Clear source to help GC
-        beepRef.current = null;
-      }
-    };
-  }, []);
-
-  const playBeep = useCallback(() => {
-    if (beepRef.current) {
-      beepRef.current.currentTime = 0;
-      const playPromise = beepRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Silently handle interruption errors
-        });
-      }
+    if (Math.abs(lTime) % 60 === 0 && lTime !== 0) {
+      playSound('alert');
     }
-  }, []);
-
-  useEffect(() => {
-    if (Math.abs(lTime) % 60 === 0) {
-      playBeep();
-    }
-  }, [lTime, playBeep]);
+  }, [lTime, playSound]);
 
   const currentMilestone = useMemo(() => {
     const sorted = [...MISSION_MILESTONES].sort((a, b) => a.time - b.time);
@@ -106,7 +92,7 @@ export default function App() {
             <img 
               src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Artemis_program_logo.svg" 
               alt="Artemis" 
-              className="h-8 brightness-0 invert"
+              className="h-10 brightness-0 invert"
               referrerPolicy="no-referrer"
             />
             <div className="h-6 w-px bg-white/10 mx-2" />
@@ -124,9 +110,9 @@ export default function App() {
               </span>
             </div>
             <div className="flex flex-col items-center px-6 border-x border-white/5">
-              <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-1">Countdown / MET</span>
+              <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-1">Mission Clock (T-0)</span>
               <span className={`text-2xl font-mono font-bold tracking-tighter ${lTime < 0 ? 'text-orange-500' : 'text-green-500'}`}>
-                {lTime < 0 ? 'L' : 'T'}{formatMissionTime(lTime)}
+                T{formatMissionTime(lTime)}
               </span>
             </div>
             <div className="flex flex-col items-center">
@@ -144,12 +130,32 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleMute}
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10 flex items-center gap-2"
+            title={isMuted ? "Unmute Mission Audio" : "Mute Mission Audio"}
+          >
+            {isMuted ? (
+              <Zap className="w-4 h-4 text-white/20" />
+            ) : (
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <Radio className="w-4 h-4 text-orange-500" />
+              </motion.div>
+            )}
+            <span className={`text-[10px] font-mono uppercase tracking-widest ${isMuted ? 'text-white/20' : 'text-orange-500'}`}>
+              Audio: {isMuted ? 'Off' : 'Live'}
+            </span>
+          </button>
+          <div className="h-6 w-px bg-white/10 mx-1" />
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
             <Radio className="w-3 h-3 text-blue-500" />
             <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">Comm: Active</span>
           </div>
           <button 
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={() => { playSound('click'); setIsSettingsOpen(true); }}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10"
           >
             <SettingsIcon className="w-5 h-5 text-white/40" />
@@ -158,57 +164,57 @@ export default function App() {
       </header>
 
       {/* Main Dashboard Grid */}
-      <main className="h-[calc(100vh-4rem)] p-4 grid grid-cols-12 grid-rows-12 gap-4">
+      <main className="h-[calc(100vh-4rem)] p-1 grid grid-cols-12 grid-rows-12 gap-1">
         
         {/* Left Column: Timeline & Sequence */}
-        <div className="col-span-3 row-span-12 flex flex-col gap-4">
+        <div className="col-span-3 row-span-12 flex flex-col gap-1">
           <Timeline lTime={lTime} />
           
           {/* Quick Stats */}
-          <div className="bg-black/40 border border-white/10 rounded-lg p-4 grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-mono text-white/40 uppercase">Cabin Pressure</span>
-              <span className="text-sm font-mono text-white font-bold">14.7 PSI</span>
+          <div className="bg-black/60 border border-white/10 rounded-lg p-2 grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[7px] font-mono text-white/40 uppercase">Cabin Pressure</span>
+              <span className="text-xs font-mono text-white font-bold">14.7 PSI</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-mono text-white/40 uppercase">Temp</span>
-              <span className="text-sm font-mono text-white font-bold">22.4°C</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[7px] font-mono text-white/40 uppercase">Temp</span>
+              <span className="text-xs font-mono text-white font-bold">22.4°C</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-mono text-white/40 uppercase">Radiation</span>
-              <span className="text-sm font-mono text-green-500 font-bold">0.12 mSv</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[7px] font-mono text-white/40 uppercase">Radiation</span>
+              <span className="text-xs font-mono text-green-500 font-bold">0.12 mSv</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-mono text-white/40 uppercase">Heart Rate</span>
-              <span className="text-sm font-mono text-white font-bold">72 BPM</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[7px] font-mono text-white/40 uppercase">Heart Rate</span>
+              <span className="text-xs font-mono text-white font-bold">72 BPM</span>
             </div>
           </div>
         </div>
 
         {/* Center Column: Video Wall & Trajectory */}
-        <div className="col-span-6 row-span-12 flex flex-col gap-4">
+        <div className="col-span-6 row-span-12 flex flex-col gap-1">
           {/* Top: Video Wall */}
           <div className="flex-[3]">
             <VideoWall feedIds={youtubeIds} />
           </div>
 
           {/* Bottom: Trajectory & Progress */}
-          <div className="flex-[2] grid grid-cols-2 gap-4">
+          <div className="flex-[2] grid grid-cols-2 gap-1">
             <Trajectory progress={progress} />
             
-            <div className="bg-black/40 border border-white/10 rounded-lg p-4 flex flex-col gap-4">
+            <div className="bg-black/60 border border-white/10 rounded-lg p-2 flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Mission Progress</span>
+                <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Mission Progress</span>
                 <span className="text-xs font-mono text-orange-500 font-bold">{(progress * 100).toFixed(1)}%</span>
               </div>
               
-              <div className="flex-1 flex flex-col justify-center gap-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] font-mono text-white/60">
+              <div className="flex-1 flex flex-col justify-center gap-3">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] font-mono text-white/60">
                     <span>Current Phase</span>
-                    <span className="text-white font-bold">{currentMilestone?.label}</span>
+                    <span className="text-white font-bold truncate max-w-[150px]">{currentMilestone?.label}</span>
                   </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                     <motion.div 
                       className="h-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
                       initial={{ width: 0 }}
@@ -217,16 +223,16 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-white/5 rounded-lg border border-white/5">
-                    <div className="text-[8px] font-mono text-white/40 uppercase mb-1">Distance to Moon</div>
-                    <div className="text-sm font-mono text-white font-bold">
+                <div className="grid grid-cols-2 gap-1">
+                  <div className="p-1.5 bg-white/5 rounded-lg border border-white/5">
+                    <div className="text-[7px] font-mono text-white/40 uppercase mb-0.5">Distance to Moon</div>
+                    <div className="text-xs font-mono text-white font-bold">
                       {lTime < 0 ? '---' : `${(384400 * (1 - progress)).toFixed(0)} km`}
                     </div>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-lg border border-white/5">
-                    <div className="text-[8px] font-mono text-white/40 uppercase mb-1">Time to Splashdown</div>
-                    <div className="text-sm font-mono text-white font-bold">
+                  <div className="p-1.5 bg-white/5 rounded-lg border border-white/5">
+                    <div className="text-[7px] font-mono text-white/40 uppercase mb-0.5">Time to Splashdown</div>
+                    <div className="text-xs font-mono text-white font-bold">
                       {lTime < 0 ? '---' : formatMissionTime(MISSION_MILESTONES[MISSION_MILESTONES.length - 1].time - lTime)}
                     </div>
                   </div>
@@ -237,15 +243,15 @@ export default function App() {
         </div>
 
         {/* Right Column: Telemetry & System Status */}
-        <div className="col-span-3 row-span-12 flex flex-col gap-4">
+        <div className="col-span-3 row-span-12 flex flex-col gap-1">
           <div className="flex-1">
             <Telemetry lTime={lTime} />
           </div>
 
           {/* System Status Grid */}
-          <div className="bg-black/40 border border-white/10 rounded-lg p-4 flex flex-col gap-4">
-            <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest border-b border-white/10 pb-2">System Diagnostics</div>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="bg-black/60 border border-white/10 rounded-lg p-2 flex flex-col gap-2">
+            <div className="text-[9px] font-mono text-white/40 uppercase tracking-widest border-b border-white/10 pb-1">System Diagnostics</div>
+            <div className="grid grid-cols-2 gap-1">
               <StatusItem icon={<Zap className="w-3 h-3" />} label="Power" status="Optimal" color="text-green-500" />
               <StatusItem icon={<Shield className="w-3 h-3" />} label="Thermal" status="Stable" color="text-green-500" />
               <StatusItem icon={<Activity className="w-3 h-3" />} label="Life Support" status="Nominal" color="text-green-500" />
@@ -254,8 +260,8 @@ export default function App() {
           </div>
 
           {/* 3D Spacecraft View */}
-          <div className="flex-1 min-h-[300px]">
-            <Spacecraft3D />
+          <div className="flex-1 min-h-[250px]">
+            <Spacecraft3D lTime={lTime} />
           </div>
         </div>
       </main>

@@ -93,10 +93,10 @@ export const Telemetry: React.FC<TelemetryProps> = ({ lTime }) => {
   const currentStats = data[data.length - 1] || { velocity: 0, altitude: 0, fuel: 100, oxygen: 100, temp: 22, pressure: 14.7 };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-2 h-full">
       {/* Top Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-black/40 border border-white/10 rounded-lg p-4 flex flex-col gap-4 relative overflow-hidden group">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-black/40 border border-white/10 rounded-lg p-3 flex flex-col gap-2 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
             <Activity className="w-8 h-8 text-orange-500" />
           </div>
@@ -152,8 +152,8 @@ export const Telemetry: React.FC<TelemetryProps> = ({ lTime }) => {
       </div>
 
       {/* Environmental Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-black/40 border border-white/10 rounded-lg p-3 flex items-center gap-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-black/40 border border-white/10 rounded-lg p-2 flex items-center gap-2">
           <div className="p-2 bg-white/5 rounded-lg">
             <Thermometer className="w-4 h-4 text-orange-400" />
           </div>
@@ -174,9 +174,9 @@ export const Telemetry: React.FC<TelemetryProps> = ({ lTime }) => {
       </div>
 
       {/* Resource Gauges */}
-      <div className="bg-black/40 border border-white/10 rounded-lg p-4 flex flex-col gap-4">
-        <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest border-b border-white/10 pb-2">Resource Consumption</div>
-        <div className="flex flex-col gap-4">
+      <div className="bg-black/40 border border-white/10 rounded-lg p-3 flex flex-col gap-2">
+        <div className="text-[9px] font-mono text-white/40 uppercase tracking-widest border-b border-white/10 pb-1.5">Resource Consumption</div>
+        <div className="flex flex-col gap-2">
           <SystemGauge label="Propellant" value={currentStats.fuel} color="bg-orange-500" />
           <SystemGauge label="O2 Levels" value={currentStats.oxygen} color="bg-blue-500" />
         </div>
